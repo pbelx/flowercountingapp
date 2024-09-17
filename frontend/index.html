@@ -43,6 +43,18 @@
             </form>
         </div>
 
+        <!-- Single Image Result Form -->
+        <div v-if="token" class="mb-4">
+            <h2>View Single Image Result</h2>
+            <form @submit.prevent="getSingleResult">
+                <div class="mb-3">
+                    <label for="imageName" class="form-label">Image Name</label>
+                    <input type="text" class="form-control" id="imageName" v-model="imageName" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Get Image Result</button>
+            </form>
+        </div>
+
         <!-- Results -->
         <div v-if="results.length > 0" class="mb-4">
             <h2>Results</h2>
@@ -51,6 +63,13 @@
                     {{ result.image_id }}: {{ result.flower_count }} flowers
                 </li>
             </ul>
+        </div>
+
+        <!-- Single Result Display -->
+        <div v-if="singleResult" class="mb-4">
+            <h2>Single Image Result</h2>
+            <p><strong>Image ID:</strong> {{ singleResult.image_id }}</p>
+            <p><strong>Flower Count:</strong> {{ singleResult.flower_count }}</p>
         </div>
 
         <!-- Error Display -->
@@ -68,8 +87,10 @@
                     password: '',
                     files: [],
                     results: [],
+                    imageName: '',
+                    singleResult: null,
                     error: '',
-                    apiUrl: 'http://flower.entebbe.fun' // Update this to your API URL
+                    apiUrl: 'http://api-server' // Update this to your API URL
                 }
             },
             methods: {
@@ -105,6 +126,19 @@
                         this.error = '';
                     } catch (err) {
                         this.error = 'Image processing failed. Please try again.';
+                    }
+                },
+                async getSingleResult() {
+                    try {
+                        const response = await axios.get(`${this.apiUrl}/images/${this.imageName}`, {
+                            headers: {
+                                'Authorization': `Bearer ${this.token}`
+                            }
+                        });
+                        this.singleResult = response.data;
+                        this.error = '';
+                    } catch (err) {
+                        this.error = 'Failed to fetch image result. Please try again.';
                     }
                 }
             }
