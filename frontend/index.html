@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flower Counting Application</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Vue.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.2.31/vue.global.prod.min.js"></script>
+    <!-- Axios for HTTP requests -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.26.0/axios.min.js"></script>
+</head>
+<body>
+    <div id="app" class="container mt-5">
+        <h1 class="mb-4">Flower Counting Application</h1>
+
+        <!-- Login Form -->
+        <div v-if="!token" class="mb-4">
+            <h2>Login</h2>
+            <form @submit.prevent="login">
+                <div class="mb-3">
+                    <label for="username" class="form-label">Username</label>
+                    <input type="text" class="form-control" id="username" v-model="username" required>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="password" v-model="password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Login</button>
+            </form>
+        </div>
+
+        <!-- Image Upload and Processing -->
+        <div v-if="token" class="mb-4">
+            <h2>Upload Images</h2>
+            <form @submit.prevent="processImages">
+                <div class="mb-3">
+                    <label for="images" class="form-label">Select Images</label>
+                    <input type="file" class="form-control" id="images" multiple @change="handleFileUpload" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Process Images</button>
+            </form>
+        </div>
+
+        <!-- Results -->
+        <div v-if="results.length > 0" class="mb-4">
+            <h2>Results</h2>
+            <ul class="list-group">
+                <li v-for="result in results" :key="result.image_id" class="list-group-item">
+                    {{ result.image_id }}: {{ result.flower_count }} flowers
+                </li>
+            </ul>
+        </div>
+
+        <!-- Error Display -->
+        <div v-if="error" class="alert alert-danger" role="alert">
+            {{ error }}
+        </div>
+    </div>
+
+    <script>
+        const app = Vue.createApp({
+            data() {
+                return {
+                    token: '',
+                    username: '',
+                    password: '',
+                    files: [],
+                    results: [],
+                    error: '',
+                    apiUrl: 'http://flower.entebbe.fun' // Update this to your API URL
+                }
+            },
+            methods: {
+                async login() {
+                    try {
+                        const response = await axios.post(`${this.apiUrl}/auth/token`, {
+                            username: this.username,
+                            password: this.password
+                        });
+                        this.token = response.data.access_token;
+                        this.error = '';
+                    } catch (err) {
+                        this.error = 'Login failed. Please check your credentials.';
+                    }
+                },
+                handleFileUpload(event) {
+                    this.files = event.target.files;
+                },
+                async processImages() {
+                    const formData = new FormData();
+                    for (let i = 0; i < this.files.length; i++) {
+                        formData.append('images', this.files[i]);
+                    }
+
+                    try {
+                        const response = await axios.post(`${this.apiUrl}/images/batch`, formData, {
+                            headers: {
+                                'Authorization': `Bearer ${this.token}`,
+                                'Content-Type': 'multipart/form-data'
+                            }
+                        });
+                        this.results = response.data.results;
+                        this.error = '';
+                    } catch (err) {
+                        this.error = 'Image processing failed. Please try again.';
+                    }
+                }
+            }
+        });
+
+        app.mount('#app');
+    </script>
+</body>
+</html>
